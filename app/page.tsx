@@ -119,10 +119,19 @@ export default function Home() {
     setCurrentPage(prevPage => prevPage + 1);
   };
 
-  // Derive unique tags from fetched repositories for the filter UI
-  const uniqueTags = Array.from(
-    new Set(repositories.flatMap(repo => repo.tags || []))
-  ).sort();
+  // Derive unique tags from fetched repositories and ensure the currently
+  // selected tags remain visible even when they filter the result set down to zero
+  const uniqueTags = useMemo(() => {
+    const tagSet = new Set<string>();
+
+    repositories.forEach(repo => {
+      repo.tags?.forEach(tag => tagSet.add(tag));
+    });
+
+    selectedTags.forEach(tag => tagSet.add(tag));
+
+    return Array.from(tagSet).sort();
+  }, [repositories, selectedTags]);
 
   return (
     <div className="bg-gray-50 min-h-screen">
