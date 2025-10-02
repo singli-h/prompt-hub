@@ -63,20 +63,25 @@ export default function Home() {
       let query = client
         .from("prompt_repositories")
         .select("id, name, description, tags, model_compatibility", { count: 'exact' })
-        .eq("is_public", true)
+        .eq("is_public", true);
+
+      const trimmedSearchTerm = currentSearchTerm.trim();
+      if (trimmedSearchTerm) {
+        const escapedSearchTerm = trimmedSearchTerm
+          .replace(/[%_]/g, "\\$&")
+          .replace(/,/g, "\\,");
+        query = query.or(
+          `name.ilike.%${escapedSearchTerm}%,description.ilike.%${escapedSearchTerm}%`
+        );
+      }
+
+      if (currentSelectedTags.length > 0) {
+        query = query.contains("tags", currentSelectedTags);
+      }
+
+      const { data, error, count } = await query
+        .order("created_at", { ascending: false })
         .range(from, to);
-
-      // Uncomment and implement when search and filtering are ready
-      // if (currentSearchTerm) {
-      //   query = query.or(`name.ilike.%${currentSearchTerm}%,description.ilike.%${currentSearchTerm}%`);
-      // }
-      // if (currentSelectedTags.length > 0) {
-      //   query = query.contains("tags", currentSelectedTags);
-      // }
-      
-      query = query.order("created_at", { ascending: false });
-
-      const { data, error, count } = await query;
 
       if (error) {
         console.error("Error fetching repositories:", error);
